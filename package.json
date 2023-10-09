@@ -1,0 +1,24 @@
+{
+  "name": "tg-ai-bot",
+  "version": "1.0.0",
+  "main": "dist/index.js",
+  "author": "Nick Liu",
+  "license": "MIT",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "build": "tsc --build",
+    "start": "node dist/app.js",
+    "dev": "tsc-watch --onSuccess \"node dist/app.js\""
+  },
+  "dependencies": {
+    "dotenv": "^16.3.1",
+    "langchain": "^0.0.163",
+    "telegraf": "^4.14.0"
+  },
+  "devDependencies": {
+    "ts-node": "^10.9.1",
+    "tsc": "^2.0.4",
+    "tsc-watch": "^6.0.4",
+    "typescript": "^5.2.2"
+  }
+}
