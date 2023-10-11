@@ -1,6 +1,10 @@
-import { Telegraf, Telegram } from "telegraf"
-import { message } from "telegraf/filters"
+import { Markup, Telegraf } from "telegraf"
+// import { message } from "telegraf/filters"
 import 'dotenv/config'
+import { downloadVideo } from './videodownload'
+import fs from 'fs'
+import { sendMessagetoChatGPT } from './chatgpt'
+import { translate } from "./translator"
 
 // 判断 process.env.BOT_TOKEN 是否为空，为空则报错提示并退出程序
 if (!process.env.BOT_TOKEN) {
@@ -10,25 +14,66 @@ if (!process.env.BOT_TOKEN) {
 async function main() {
     const bot = new Telegraf(process.env.BOT_TOKEN!)
 
-    bot.use(async (ctx, next) => {
-        console.time(`Processing update ${ctx.update.update_id}`);
-        console.log(ctx)
+    // bot.use(async (ctx, next) => {
+    //     console.time(`Processing update ${ctx.update.update_id}`);
+    //     console.log(ctx)
         
-        bot.telegram.sendChatAction(ctx.chat!.id, 'typing')
-        bot.telegram.sendMessage(ctx.chat!.id, 'HHHH', {
-            reply_to_message_id: ctx.message!.message_id,
-        })
+    //     bot.telegram.sendChatAction(ctx.chat!.id, 'typing')
+    //     bot.telegram.sendMessage(ctx.chat!.id, 'HHHH', {
+    //         reply_to_message_id: ctx.message!.message_id,
+    //     })
 
-        await next() // runs next middleware
-        // runs after next middleware finishes
-        console.timeEnd(`Processing update ${ctx.update.update_id}`);
-    })
+    //     await next() // runs next middleware
+    //     // runs after next middleware finishes
+    //     console.timeEnd(`Processing update ${ctx.update.update_id}`);
+    // })
 
     bot.start((ctx) => ctx.reply('Welcome'))
     bot.help((ctx) => ctx.reply('Send me a sticker'))
-    bot.on(message('sticker'), (ctx) => ctx.reply('👍'))
-    bot.hears('hi', (ctx) => ctx.reply('Hey there'))
-    bot.command('hipster', Telegraf.reply('λ'))
+    // bot.on(message('sticker'), (ctx) => ctx.reply('👍'))
+
+    bot.command('dl', async (ctx) => {
+        console.log(ctx.payload)
+        const output = await downloadVideo(ctx.payload, ctx)
+        console.log(output)
+        await ctx.sendVideo({
+            source: `./${output.id}.mp4`
+        }, {
+            width: output.width,
+            height: output.height,
+            duration: output.duration,
+            caption: output.title,
+            supports_streaming: true
+        })
+        // 删除 `./${output.id}.mp4` 这个文件
+        fs.unlinkSync(`./${output.id}.mp4`)
+    })
+
+    bot.command('trans', async (ctx) => {
+        console.log(ctx.payload)
+        const output = await translate(ctx.payload)
+        ctx.reply(output)
+    })
+
+    bot.on('message', async (ctx) => {
+        // 确保消息有 text 属性
+        if ('text' in ctx.message) {
+            // 回复🤔并获取消息 ID
+            const thinkingMessage = await ctx.reply('🤔')
+            const messageId = thinkingMessage.message_id
+        
+            // 设置机器人状态为正在输入
+            await ctx.telegram.sendChatAction(ctx.chat.id, 'typing')
+        
+            // 使用 OpenAI 的 API（或其他 API）获取回复内容。此处假设为 fetchOpenAIReply。
+            const replyContent = await sendMessagetoChatGPT(ctx.message.text, ctx.chat.id, ctx, messageId)
+        
+            // 修改🤔表情的消息为 API 返回的内容
+            await ctx.telegram.editMessageText(ctx.chat.id, messageId, undefined, replyContent, {
+                parse_mode: 'Markdown'
+            })
+        }
+    })
     bot.launch()
 
     // Enable graceful stop
