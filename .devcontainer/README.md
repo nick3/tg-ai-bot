@@ -1,7 +1,7 @@
 # 使用 devcontainer 进行开发
 该项目配备了一个 devcontainer 配置，让您能够在一个已完全配置好的开发环境容器中启动项目。
 ## VS Code Dev Containers
-[![Open in Dev Containers](https://img.shields.io/static/v1?label=Dev%20Containers&message=Open&color=blue&logo=visualstudiocode)](https://vscode.dev/redirect?url=vscode://ms-vscode-remote.remote-containers/cloneInVolume?url=https://github.com/nick3/ysservice)
+[![Open in Dev Containers](https://img.shields.io/static/v1?label=Dev%20Containers&message=Open&color=blue&logo=visualstudiocode)](https://vscode.dev/redirect?url=vscode://ms-vscode-remote.remote-containers/cloneInVolume?url=https://github.com/nick3/tg-ai-bot)
 
 如果您已安装了 VS Code，只需点击上方按钮即可在 VS Code Dev Containers 中打开此项目。
 
