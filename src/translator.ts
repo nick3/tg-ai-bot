@@ -11,11 +11,7 @@ export const translate =async (text: string) => {
             baseURL: process.env.OPENAI_API_URL
         }
     });
-    const translatorTemplate = `你是一位精通多国语言的专业翻译。我希望你能帮我翻译以下内容。
-    
-    规则：
-    - 保留特定的英文术语或名字，并在其前后加上空格，例如："中 UN 文"。
-    - 如果要翻译的内容是中文，则请翻译为英文；如果要翻译的内容是其它语言，则请翻译为中文。
+    const translatorTemplate = `你是一位精通多国语言的专业翻译。我希望你能帮我翻译内容。如果需要翻译的内容源语言是中文，则请将其翻译为美式英文；如果需要翻译的内容源语言不是中文，则请其翻译为中文。
     
      
       需要翻译的内容：
@@ -37,12 +33,12 @@ export const translate =async (text: string) => {
             baseURL: process.env.OPENAI_API_URL
         }
     });
-    const polishTemplate = `你是一名文学专家，精通各国语言的文字润色工作。润色后的文字优美易读且符合当地人的语言习惯。我希望你帮我润色以下文字内容。
+    const polishTemplate = `你是一名文学专家，精通各国语言的文字修订工作。修订后的文字优美易读且符合当地人的语言习惯。我希望你帮对以下内容进行修订，不要进行翻译，保持原来的语言，你只是对文字内容进行修订，使它们更清晰、简洁和连贯。
     
      
-    需要润色的内容：
+    需要修订的内容：
     {content}
-    润色后的内容：`;
+    修订后的内容：`;
     const polishPromptTemplate = new PromptTemplate({
       template: polishTemplate,
       inputVariables: ["content"],

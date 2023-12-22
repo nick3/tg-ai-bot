@@ -62,7 +62,7 @@ class ChatGPT {
 
         this.model = new ChatOpenAI({
             temperature: 0.9,
-            verbose: true,
+            verbose: false,
             streaming: true,
             openAIApiKey: process.env.OPENAI_API_KEY,
             configuration: {
