@@ -1,15 +1,14 @@
 import { Context, Markup, NarrowedContext, Telegraf } from "telegraf"
 // import { message } from "telegraf/filters"
-import 'dotenv/config'
+import { config } from './config'
 import { downloadVideo } from './videodownload'
 import fs from 'fs'
-import { sendMessagetoChatGPT } from './chatgpt'
+import { Models, sendMessagetoChatBot, changeChatBotModel } from './chatbot'
 import { translate } from "./translator"
 import { Message, Update } from "@telegraf/types"
-import { forEach } from "lodash"
 
-// 判断 process.env.BOT_TOKEN 是否为空，为空则报错提示并退出程序
-if (!process.env.BOT_TOKEN) {
+// 判断 config.BOT_TOKEN 是否为空，为空则报错提示并退出程序
+if (!config.BOT_TOKEN) {
     console.error("BOT_TOKEN is empty")
     process.exit(1)
 }
@@ -23,15 +22,15 @@ const handleTextMessage = async (message: string, ctx: NarrowedContext<Context<U
     await ctx.telegram.sendChatAction(ctx.chat.id, 'typing')
 
     // 使用 OpenAI 的 API（或其他 API）获取回复内容。此处假设为 fetchOpenAIReply。
-    const replyContent = await sendMessagetoChatGPT(message, ctx.chat.id, ctx, messageId)
+    const replyContent = await sendMessagetoChatBot(message, ctx.chat.id, ctx, messageId)
 
     // 修改🤔表情的消息为 API 返回的内容
-    await ctx.telegram.editMessageText(ctx.chat.id, messageId, undefined, replyContent, {
+    await ctx.telegram.editMessageText(ctx.chat.id, messageId, undefined, replyContent + ' 🔚', {
         parse_mode: 'Markdown'
     })
 }
 async function main() {
-    const bot = new Telegraf(process.env.BOT_TOKEN!)
+    const bot = new Telegraf(config.BOT_TOKEN!)
 
     // bot.use(async (ctx, next) => {
     //     console.time(`Processing update ${ctx.update.update_id}`);
@@ -50,6 +49,30 @@ async function main() {
     bot.start((ctx) => ctx.reply('Welcome'))
     bot.help((ctx) => ctx.reply('Send me a sticker'))
     // bot.on(message('sticker'), (ctx) => ctx.reply('👍'))
+
+    bot.command('models', async (ctx) => {
+        console.log(ctx.payload)
+        // 在telegram中显示一个inline键盘，候选项为枚举类型 Models 中的所有模型
+        await ctx.reply('请选择需要切换的大语言模型:', {
+            ...Markup.inlineKeyboard([
+                Markup.button.callback(Models.GPT35Turbo, Models.GPT35Turbo),
+                Markup.button.callback(Models.GPT4, Models.GPT4),
+                Markup.button.callback(Models.GeminiPro, Models.GeminiPro),
+            ])
+        })
+    })
+
+    for (const model of Object.values(Models)) {
+        bot.action(model, async (ctx) => {
+            // 处理用户点击按钮的事件
+            // 在这里使用model进行逻辑处理
+            changeChatBotModel(ctx.chat!.id, model);
+            ctx.answerCbQuery();  // 记得调用这个方法来通知 Telegram 你已经处理了这个回调
+
+            // 修改消息为“模型已切换成功！”
+            await ctx.editMessageText(`模型已切换为 ${model}！`);
+        });
+    }
 
     bot.command('dl', async (ctx) => {
         console.log(ctx.payload)
