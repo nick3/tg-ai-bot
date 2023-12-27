@@ -1,6 +1,7 @@
 import { Message, Update } from '@telegraf/types';
 import { Context } from 'telegraf';
 import youtubedl from 'youtube-dl-exec'
+import { logger } from './logger'
 
 export const downloadVideo = async (url: string, ctx: Context<{
     message: Update.New & Update.NonChannel & Message.TextMessage;
@@ -21,6 +22,6 @@ export const downloadVideo = async (url: string, ctx: Context<{
         })
         return output
     } catch (error) {
-        console.error(error)
+        logger.error(error)
     }
 }

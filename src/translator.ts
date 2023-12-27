@@ -2,6 +2,7 @@ import { SimpleSequentialChain, LLMChain } from "langchain/chains";
 import { OpenAI } from "langchain/llms/openai";
 import { PromptTemplate } from "langchain/prompts";
 import { config } from './config';
+import { logger } from "./logger"
 
 export const translate =async (text: string) => {
     const translatorLLM = new OpenAI({ 
@@ -50,6 +51,6 @@ export const translate =async (text: string) => {
       verbose: true,
     });
     const result = await overallChain.run(text);
-    console.log(result);
+    logger.debug(result);
     return result
 }
