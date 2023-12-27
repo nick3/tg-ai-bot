@@ -1,0 +1,23 @@
+version: '3'
+services:
+  # The redis cache.
+  redis:
+    image: redis:6-alpine
+    restart: always
+    volumes:
+      # Mount the redis data directory to the container.
+      - ./volumes/redis/data:/data
+    # Set the redis password when startup redis server.
+    command: redis-server --requirepass nicktgaibot
+    healthcheck:
+      test: ["CMD", "redis-cli","ping"]
+    # uncomment to expose redis port to host
+    # ports:
+    #   - "6379:6379"
+  app:
+    build:
+      context: . # 当前目录作为构建上下文
+      dockerfile: Dockerfile # 引用Dockerfile
+    volumes:
+      - .:/usr/src/app # 将宿主的当前目录挂载到容器的工作目录
+    command: npm start # 容器启动后执行的命令
