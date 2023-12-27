@@ -32,11 +32,11 @@ const handleTextMessage = async (chatBotManager: ChatBotManager, message: string
 }
 async function main() {
     const bot = new Telegraf(config.BOT_TOKEN!)
-    const chatBotManager = new ChatBotManager()
 
     // 获取 bot 的基本信息
     const botInfo = await bot.telegram.getMe()
     logger.info(botInfo)
+    const chatBotManager = new ChatBotManager(botInfo)
     const botUsername = botInfo.username
 
     bot.use(async (ctx, next) => {
@@ -73,7 +73,7 @@ async function main() {
     bot.command('models', async (ctx) => {
         logger.debug(ctx.payload)
         // 在telegram中显示一个inline键盘，候选项为枚举类型 Models 中的所有模型
-        await ctx.reply(`当前使用的模型为 ${chatBotManager.getCurrentChatBotModel(ctx.chat!.id)}，请选择需要切换的大语言模型:`, {
+        await ctx.reply(`当前使用的模型为 ${await chatBotManager.getCurrentChatBotModel(ctx.chat!.id)}，请选择需要切换的大语言模型:`, {
             ...Markup.inlineKeyboard([
                 Markup.button.callback(Models.GPT35Turbo, Models.GPT35Turbo),
                 Markup.button.callback(Models.GPT4, Models.GPT4),
@@ -87,7 +87,7 @@ async function main() {
         bot.action(model, async (ctx) => {
             // 处理用户点击按钮的事件
             // 在这里使用model进行逻辑处理
-            chatBotManager.changeChatBotModel(ctx.chat!.id, model);
+            await chatBotManager.changeChatBotModel(ctx.chat!.id, model);
             ctx.answerCbQuery();  // 记得调用这个方法来通知 Telegram 你已经处理了这个回调
 
             await ctx.editMessageText(`模型已切换为 ${model}！`);
@@ -99,7 +99,7 @@ async function main() {
     });
 
     bot.command('clear', async (ctx) => {
-        chatBotManager.clearChatBotMemory(ctx.chat!.id);
+        await chatBotManager.clearChatBotMemory(ctx.chat!.id);
         await ctx.reply('已清除当前会话记录，开启新的会话。');
     });
 
@@ -138,11 +138,11 @@ async function main() {
                 await handleTextMessage(chatBotManager, message.text, ctx)
             } else {
                 if (message.entities) {
-                    message.entities.forEach((entity) => {
+                    message.entities.forEach(async (entity) => {
                         if (entity.type === 'mention') {
                             // 机器人被@提及
                             const text = message.text.replace(`@${botUsername}`, 'AI')
-                            handleTextMessage(chatBotManager, text, ctx)
+                            await handleTextMessage(chatBotManager, text, ctx)
                             return
                         }
                     });
