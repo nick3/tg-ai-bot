@@ -16,10 +16,12 @@
     "dotenv": "^16.3.1",
     "langchain": "^0.0.163",
     "lodash": "^4.17.21",
+    "microsoft-cognitiveservices-speech-sdk": "^1.34.0",
     "pino": "^8.17.2",
     "progress-estimator": "^0.3.1",
     "telegraf": "^4.14.0",
     "telegram-md": "^1.3.1",
+    "uuid": "^9.0.1",
     "youtube-dl-exec": "^2.4.15"
   },
   "devDependencies": {
