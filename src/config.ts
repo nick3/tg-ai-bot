@@ -46,7 +46,11 @@ export class Config {
         Object.keys(this.config!).forEach(key => {
             const found = rawData.find(item => item.CfgKey === key);
             if (found) {
-                this.config![key] = found.CfgValue;
+                if (key === 'TTS') {
+                    this.config![key] = found.CfgValue === 'true';
+                } else {
+                    this.config![key] = found.CfgValue;
+                }
             }
         });
     }

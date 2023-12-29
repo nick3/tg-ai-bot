@@ -69,7 +69,6 @@ class ChatBot {
      * @param model - The new model to use. If not specified, the current model will be used.
      */
     changeModel(model?: Models) {
-        console.log('config:', this.config)
         if (model) {
             this.model = model;
         }
