@@ -1,4 +1,4 @@
-import { config } from './config';
+import { Config, AppConfig } from './config';
 import { BaseChatModel } from "langchain/chat_models/base";
 import { ChatOpenAI } from "langchain/chat_models/openai";
 import { ChatGoogleGenerativeAI } from "@langchain/google-genai";
@@ -31,6 +31,7 @@ class ChatBot {
         k: 30
     });
     conversationChain?: ConversationChain;
+    config?: AppConfig;
 
     /**
      * Creates a new instance of the ChatBot class.
@@ -41,10 +42,10 @@ class ChatBot {
         this.chatId = chatId
         this.model = model;
         this.botInfo = botInfo;
-        this.changeModel();
     }
 
-    async initPersonality() {
+    async init() {
+        this.config = (await Config.loadConfig()).config
         await this.memory.saveContext({
             input: `你现在是一个 Telegram Bot，
                 你的 username 是 @${this.botInfo.username}，
@@ -59,6 +60,7 @@ class ChatBot {
                 我是一个虚拟助手，旨在回答问题和在私聊或群组中进行交流。
                 如果你有什么问题或者需要帮助，请随时告诉我！`
         });
+        this.changeModel();
         return this;
     }
 
@@ -67,6 +69,7 @@ class ChatBot {
      * @param model - The new model to use. If not specified, the current model will be used.
      */
     changeModel(model?: Models) {
+        console.log('config:', this.config)
         if (model) {
             this.model = model;
         }
@@ -75,9 +78,9 @@ class ChatBot {
                 this.llm = new ChatOpenAI({
                     modelName: "gpt-3.5-turbo",
                     temperature: 0.9,
-                    openAIApiKey: config.OPENAI_API_KEY,
+                    openAIApiKey: this.config?.OPENAI_API_KEY,
                     configuration: {
-                        baseURL: config.OPENAI_API_URL
+                        baseURL: this.config?.OPENAI_API_URL
                     }
                 });
 
@@ -86,10 +89,10 @@ class ChatBot {
             case Models.GPT4:
                 this.llm = new ChatOpenAI({
                     temperature: 0.9,
-                    azureOpenAIApiKey: config.AZURE_OPENAI_API_KEY,
-                    azureOpenAIApiVersion: config.AZURE_OPENAI_API_VERSION,
-                    azureOpenAIApiInstanceName: config.AZURE_OPENAI_API_INSTANCE_NAME,
-                    azureOpenAIApiDeploymentName: config.AZURE_OPENAI_API_DEPLOYMENT_NAME,
+                    azureOpenAIApiKey: this.config?.AZURE_OPENAI_API_KEY,
+                    azureOpenAIApiVersion: this.config?.AZURE_OPENAI_API_VERSION,
+                    azureOpenAIApiInstanceName: this.config?.AZURE_OPENAI_API_INSTANCE_NAME,
+                    azureOpenAIApiDeploymentName: this.config?.AZURE_OPENAI_API_DEPLOYMENT_NAME,
                 });
 
                 break;
@@ -170,7 +173,7 @@ export class ChatBotManager {
     async getConversation(chatId: number) {
         if (!this.conversations[chatId]) {
             this.conversations[chatId] = new ChatBot(chatId, this.botInfo)
-            await this.conversations[chatId].initPersonality()
+            await this.conversations[chatId].init()
         }
         return this.conversations[chatId]
     }
