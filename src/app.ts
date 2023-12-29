@@ -63,17 +63,20 @@ class App {
         await ctx.telegram.editMessageText(ctx.chat.id, messageId, undefined, replyContent + ' 🔚', {
             parse_mode: 'Markdown'
         })
-        const ttsfile = await this.tts?.run(replyContent)
 
-        if (ttsfile) {
-            // 设置文件路径，替换为您的.wav文件路径
-            // const filePath = path.join(__dirname, ttsfile);
-            const fileOptions = {
-                source: fs.createReadStream(ttsfile)
-            };
-            await ctx.telegram.sendVoice(ctx.chat.id, fileOptions)
+        if (config.TTS) {
+            const ttsfile = await this.tts?.run(replyContent)
 
-            await deleteFile(ttsfile)
+            if (ttsfile) {
+                // 设置文件路径，替换为您的.wav文件路径
+                // const filePath = path.join(__dirname, ttsfile);
+                const fileOptions = {
+                    source: fs.createReadStream(ttsfile)
+                };
+                await ctx.telegram.sendVoice(ctx.chat.id, fileOptions)
+
+                await deleteFile(ttsfile)
+            }
         }
     }
 

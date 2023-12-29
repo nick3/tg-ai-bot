@@ -11,6 +11,7 @@ export const config = {
     AZURE_OPENAI_API_DEPLOYMENT_NAME: process.env.AZURE_OPENAI_API_DEPLOYMENT_NAME,
     TTS_SUBSCRIPTION_KEY: process.env.TTS_SUBSCRIPTION_KEY,
     TTS_SERVICE_REGION: process.env.TTS_SERVICE_REGION,
+    TTS: process.env.TTS === 'true',
     GOOGLE_API_KEY: process.env.GOOGLE_API_KEY,
     DEBUG: process.env.DEBUG,
 }
