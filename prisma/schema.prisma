@@ -1,0 +1,23 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider          = "sqlserver"
+  url               = env("DATABASE_URL")
+  shadowDatabaseUrl = env("SHADOW_DATABASE_URL")
+}
+
+model Config {
+  Id          Int     @id(map: "PK__Config__3214EC07BF1ADB93") @default(autoincrement())
+  CfgKey      String  @db.VarChar(255)
+  CfgValue    String  @db.VarChar(255)
+  Description String? @db.VarChar(500)
+}
+
+model TelegramWhitelist {
+  Id        Int      @id(map: "PK__Telegram__3214EC07E40C6C08") @default(autoincrement())
+  ChatId    String   @db.VarChar(255)
+  AddedDate DateTime @default(now(), map: "DF__TelegramW__Added__628FA481") @db.DateTime
+  Remarks   String?  @db.VarChar(500)
+}

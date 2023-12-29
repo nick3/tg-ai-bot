@@ -1,13 +1,12 @@
 import { Context, Markup, NarrowedContext, Telegraf } from "telegraf"
 // import { message } from "telegraf/filters"
-import { config } from './config'
+import { Config, AppConfig } from './config'
 import { downloadVideo } from './videodownload'
 import fs from 'fs'
 import { Models, ChatBotManager } from './chatbot'
 import { translate } from "./translator"
 import { Message, Update, UserFromGetMe } from "@telegraf/types";
 import { logger } from "./logger"
-import path from 'path';
 import { TTS } from "./tts"
 
 export function deleteFile(fileName: string): Promise<string> {
@@ -32,20 +31,14 @@ export function deleteFile(fileName: string): Promise<string> {
     });
 }
 
-// 判断 config.BOT_TOKEN 是否为空，为空则报错提示并退出程序
-if (!config.BOT_TOKEN) {
-    logger.error("BOT_TOKEN is empty")
-    process.exit(1)
-}
-
 class App {
-    bot: Telegraf
+    config?: AppConfig
+    bot?: Telegraf
     botInfo?: UserFromGetMe
     chatBotManager?: ChatBotManager
     tts?: TTS
 
     constructor() {
-        this.bot = new Telegraf(config.BOT_TOKEN!)
     }
 
     async handleTextMessage(message: string, ctx: NarrowedContext<Context<Update>, Update.MessageUpdate<Message>>) {
@@ -64,7 +57,7 @@ class App {
             parse_mode: 'Markdown'
         })
 
-        if (config.TTS) {
+        if (this.config?.TTS) {
             const ttsfile = await this.tts?.run(replyContent)
 
             if (ttsfile) {
@@ -81,6 +74,15 @@ class App {
     }
 
     async init() {
+        this.config = (await Config.loadConfig()).config
+
+        // 判断 config.BOT_TOKEN 是否为空，为空则报错提示并退出程序
+        if (!this.config?.BOT_TOKEN) {
+            logger.error("BOT_TOKEN is empty")
+            process.exit(1)
+        }
+        this.bot = new Telegraf(this.config.BOT_TOKEN!)
+
         // 获取 bot 的基本信息
         this.botInfo = await this.bot.telegram.getMe()
         logger.info(this.botInfo)
@@ -202,8 +204,8 @@ class App {
         this.bot.launch()
     
         // Enable graceful stop
-        process.once('SIGINT', () => this.bot.stop('SIGINT'))
-        process.once('SIGTERM', () => this.bot.stop('SIGTERM'))
+        process.once('SIGINT', () => this.bot!.stop('SIGINT'))
+        process.once('SIGTERM', () => this.bot!.stop('SIGTERM'))
     }
 }
 

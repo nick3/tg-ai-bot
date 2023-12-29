@@ -1,26 +1,68 @@
 import 'dotenv/config'
+import { PrismaClient } from '@prisma/client'
 
-// 读取 .env 文件中的环境变量，并将其保存在 config 对象中
-export const config = {
-    BOT_TOKEN: process.env.BOT_TOKEN,
-    OPENAI_API_KEY: process.env.OPENAI_API_KEY,
-    OPENAI_API_URL: process.env.OPENAI_API_URL,
-    AZURE_OPENAI_API_KEY: process.env.AZURE_OPENAI_API_KEY,
-    AZURE_OPENAI_API_VERSION: process.env.AZURE_OPENAI_API_VERSION,
-    AZURE_OPENAI_API_INSTANCE_NAME: process.env.AZURE_OPENAI_API_INSTANCE_NAME,
-    AZURE_OPENAI_API_DEPLOYMENT_NAME: process.env.AZURE_OPENAI_API_DEPLOYMENT_NAME,
-    TTS_SUBSCRIPTION_KEY: process.env.TTS_SUBSCRIPTION_KEY,
-    TTS_SERVICE_REGION: process.env.TTS_SERVICE_REGION,
-    TTS: process.env.TTS === 'true',
-    GOOGLE_API_KEY: process.env.GOOGLE_API_KEY,
-    DEBUG: process.env.DEBUG,
+export type AppConfig = {
+    [key: string]: string | boolean | undefined;
+    BOT_TOKEN?: string
+    OPENAI_API_KEY?: string
+    OPENAI_API_URL?: string
+    AZURE_OPENAI_API_KEY?: string
+    AZURE_OPENAI_API_VERSION?: string
+    AZURE_OPENAI_API_INSTANCE_NAME?: string
+    AZURE_OPENAI_API_DEPLOYMENT_NAME?: string
+    TTS_SUBSCRIPTION_KEY?: string
+    TTS_SERVICE_REGION?: string
+    TTS: boolean
+    GOOGLE_API_KEY?: string
 }
 
-// 清空 process.env 中上面已经保存在 config 对象中的环境变量
-delete process.env.BOT_TOKEN
-delete process.env.OPENAI_API_KEY
-delete process.env.OPENAI_API_URL
-delete process.env.AZURE_OPENAI_API_KEY
-delete process.env.AZURE_OPENAI_API_VERSION
-delete process.env.AZURE_OPENAI_API_INSTANCE_NAME
-delete process.env.AZURE_OPENAI_API_DEPLOYMENT_NAME
+var _config: Config | undefined
+
+export class Config {
+    config?: AppConfig
+
+    constructor() {
+        this.config = {
+            BOT_TOKEN: process.env.BOT_TOKEN,
+            OPENAI_API_KEY: process.env.OPENAI_API_KEY,
+            OPENAI_API_URL: process.env.OPENAI_API_URL,
+            AZURE_OPENAI_API_KEY: process.env.AZURE_OPENAI_API_KEY,
+            AZURE_OPENAI_API_VERSION: process.env.AZURE_OPENAI_API_VERSION,
+            AZURE_OPENAI_API_INSTANCE_NAME: process.env.AZURE_OPENAI_API_INSTANCE_NAME,
+            AZURE_OPENAI_API_DEPLOYMENT_NAME: process.env.AZURE_OPENAI_API_DEPLOYMENT_NAME,
+            TTS_SUBSCRIPTION_KEY: process.env.TTS_SUBSCRIPTION_KEY,
+            TTS_SERVICE_REGION: process.env.TTS_SERVICE_REGION,
+            TTS: process.env.TTS === 'true',
+            GOOGLE_API_KEY: process.env.GOOGLE_API_KEY,
+        }
+    }
+
+    updateConfigFromRawData(rawData: {
+        Id: number;
+        CfgKey: string;
+        CfgValue: string;
+        Description: string | null;
+    }[]) {
+        Object.keys(this.config!).forEach(key => {
+            const found = rawData.find(item => item.CfgKey === key);
+            if (found) {
+                this.config![key] = found.CfgValue;
+            }
+        });
+    }
+    
+
+    async reload() {
+        const prisma = new PrismaClient()
+        const config = await prisma.config.findMany()
+        this.updateConfigFromRawData(config)
+    }
+
+    static async loadConfig() {
+        if (!_config) {
+            _config = new Config()
+            await _config.reload()
+        }
+        return _config
+    }
+}
