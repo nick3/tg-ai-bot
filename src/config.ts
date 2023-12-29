@@ -1,5 +1,6 @@
 import 'dotenv/config'
 import { PrismaClient } from '@prisma/client'
+import type { Config as TConfig } from '@prisma/client'
 
 export type AppConfig = {
     [key: string]: string | boolean | undefined;
@@ -37,12 +38,7 @@ export class Config {
         }
     }
 
-    updateConfigFromRawData(rawData: {
-        Id: number;
-        CfgKey: string;
-        CfgValue: string;
-        Description: string | null;
-    }[]) {
+    updateConfigFromRawData(rawData: TConfig[]) {
         Object.keys(this.config!).forEach(key => {
             const found = rawData.find(item => item.CfgKey === key);
             if (found) {

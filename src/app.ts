@@ -8,6 +8,7 @@ import { translate } from "./translator"
 import { Message, Update, UserFromGetMe } from "@telegraf/types";
 import { logger } from "./logger"
 import { TTS } from "./tts"
+import { TGWhitelist } from './tgwhitelist'
 
 export function deleteFile(fileName: string): Promise<string> {
     return new Promise((resolve, reject) => {
@@ -33,6 +34,7 @@ export function deleteFile(fileName: string): Promise<string> {
 
 class App {
     config?: AppConfig
+    tgWhitelist?: TGWhitelist
     bot?: Telegraf
     botInfo?: UserFromGetMe
     chatBotManager?: ChatBotManager
@@ -43,7 +45,9 @@ class App {
 
     async handleTextMessage(message: string, ctx: NarrowedContext<Context<Update>, Update.MessageUpdate<Message>>) {
         // 回复🤔并获取消息 ID
-        const thinkingMessage = await ctx.reply('🤔')
+        const thinkingMessage = await ctx.reply('🤔', {
+            reply_to_message_id: ctx.message.message_id,
+        })
         const messageId = thinkingMessage.message_id
     
         // 设置机器人状态为正在输入
@@ -75,6 +79,7 @@ class App {
 
     async init() {
         this.config = (await Config.loadConfig()).config
+        this.tgWhitelist = await TGWhitelist.loadWhitelist()
 
         // 判断 config.BOT_TOKEN 是否为空，为空则报错提示并退出程序
         if (!this.config?.BOT_TOKEN) {
@@ -91,31 +96,38 @@ class App {
         const botUsername = this.botInfo.username
     
         this.bot.use(async (ctx, next) => {
-            // 判断消息是否来自群组
-            if (ctx.chat?.type === 'group' || ctx.chat?.type === 'supergroup') {
-                logger.debug(ctx.message)
-                // 使用类型守卫确保 ctx.message 是 TextMessage 类型
-                if (ctx.message) {
-                    const msg = ctx.message
-                    if ('text' in msg) {
-                        // 现在 TypeScript 知道 msg 是 TextMessage 类型
-                        msg.entities?.forEach(async (entity) => {
-                            if (entity.type === 'mention') {
-                                // 判断被 @ 的对象的 username 是否为机器人的 username
-                                if (msg.text?.slice(entity.offset, entity.offset + entity.length) === `@${botUsername}`) {
-                                    await next();
-                                    return;
+            // 判断消息是否来自白名单
+            if (ctx.chat?.id && this.tgWhitelist?.isValid(ctx.chat.id)) {
+                // 判断消息是否来自群组
+                if (ctx.chat?.type === 'group' || ctx.chat?.type === 'supergroup') {
+                    logger.debug(ctx.message)
+                    // 使用类型守卫确保 ctx.message 是 TextMessage 类型
+                    if (ctx.message) {
+                        const msg = ctx.message
+                        if ('text' in msg) {
+                            // 现在 TypeScript 知道 msg 是 TextMessage 类型
+                            msg.entities?.forEach(async (entity) => {
+                                if (entity.type === 'mention') {
+                                    // 判断被 @ 的对象的 username 是否为机器人的 username
+                                    if (msg.text?.slice(entity.offset, entity.offset + entity.length) === `@${botUsername}`) {
+                                        await next();
+                                        return;
+                                    }
                                 }
+                            });
+                            if (msg.reply_to_message?.from?.username === botUsername) {
+                                await next();
+                                return;
                             }
-                        });
-                        if (msg.reply_to_message?.from?.username === botUsername) {
-                            await next();
-                            return;
                         }
                     }
+                } else {
+                    await next() // runs next middleware
                 }
             } else {
-                await next() // runs next middleware
+                logger.info(`Access denined for chatId: ${ctx.chat?.id}`);
+                await ctx.reply('当前账号无权限，请联系管理员。');
+                return;
             }
         })
     
