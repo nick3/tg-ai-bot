@@ -98,32 +98,7 @@ class App {
         this.bot.use(async (ctx, next) => {
             // 判断消息是否来自白名单
             if (ctx.chat?.id && this.tgWhitelist?.isValid(ctx.chat.id)) {
-                // 判断消息是否来自群组
-                if (ctx.chat?.type === 'group' || ctx.chat?.type === 'supergroup') {
-                    logger.debug(ctx.message)
-                    // 使用类型守卫确保 ctx.message 是 TextMessage 类型
-                    if (ctx.message) {
-                        const msg = ctx.message
-                        if ('text' in msg) {
-                            // 现在 TypeScript 知道 msg 是 TextMessage 类型
-                            msg.entities?.forEach(async (entity) => {
-                                if (entity.type === 'mention') {
-                                    // 判断被 @ 的对象的 username 是否为机器人的 username
-                                    if (msg.text?.slice(entity.offset, entity.offset + entity.length) === `@${botUsername}`) {
-                                        await next();
-                                        return;
-                                    }
-                                }
-                            });
-                            if (msg.reply_to_message?.from?.username === botUsername) {
-                                await next();
-                                return;
-                            }
-                        }
-                    }
-                } else {
-                    await next() // runs next middleware
-                }
+                await next() // runs next middleware
             } else {
                 logger.info(`Access denined for chatId: ${ctx.chat?.id}`);
                 await ctx.reply('当前账号无权限，请联系管理员。');
@@ -190,29 +165,54 @@ class App {
             const output = await translate(ctx.payload)
             ctx.reply(output)
         })
+
+        this.bot.command('tts', async (ctx) => {
+            logger.debug(ctx.payload)
+            const ttsfile = await this.tts?.run(ctx.payload)
+
+            if (ttsfile) {
+                // 设置文件路径，替换为您的.wav文件路径
+                // const filePath = path.join(__dirname, ttsfile);
+                const fileOptions = {
+                    source: fs.createReadStream(ttsfile)
+                };
+                await ctx.telegram.sendVoice(ctx.chat.id, fileOptions)
+
+                await deleteFile(ttsfile)
+            }
+        })
     
         this.bot.on('message', async (ctx) => {
             const botUsername = ctx.botInfo.username
-            // 确保消息有 text 属性
-            logger.debug(ctx.message)
-            if ('text' in ctx.message) {
-                const message = ctx.message;
-                if (ctx.chat.type === 'private' || ctx.message.reply_to_message?.from?.username === botUsername) {
-                    await this.handleTextMessage(message.text, ctx)
-                } else {
-                    if (message.entities) {
-                        message.entities.forEach(async (entity) => {
+            const msg = ctx.message
+            // 判断消息是否来自群组
+            if (ctx.chat.type === 'group' || ctx.chat.type === 'supergroup') {
+                logger.debug(msg)
+                // 使用类型守卫确保 ctx.message 是 TextMessage 类型
+                if (msg) {
+                    if ('text' in msg) {
+                        // 现在 TypeScript 知道 msg 是 TextMessage 类型
+                        msg.entities?.forEach(async (entity) => {
                             if (entity.type === 'mention') {
-                                // 机器人被@提及
-                                const text = message.text.replace(`@${botUsername}`, 'AI')
-                                await this.handleTextMessage(text, ctx)
-                                return
+                                // 判断被 @ 的对象的 username 是否为机器人的 username
+                                if (msg.text?.slice(entity.offset, entity.offset + entity.length) === `@${botUsername}`) {
+                                    const text = msg.text.replace(`@${botUsername}`, 'AI')
+                                    await this.handleTextMessage(text, ctx)
+                                    return;
+                                }
                             }
                         });
+                        if (msg.reply_to_message?.from?.username === botUsername) {
+                            await this.handleTextMessage(msg.text, ctx)
+                            return;
+                        }
                     }
                 }
+            } else if (ctx.chat.type === 'private') {
+                await this.handleTextMessage((msg as Message.TextMessage).text, ctx)
             }
         })
+
         this.bot.launch()
     
         // Enable graceful stop
