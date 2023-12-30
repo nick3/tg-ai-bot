@@ -38,10 +38,10 @@ export class Config {
         }
     }
 
-    updateConfigFromRawData(rawData: TConfig[]) {
+    updateConfigFromRawData(rawData: TConfig[], overwrite = false) {
         Object.keys(this.config!).forEach(key => {
             const found = rawData.find(item => item.CfgKey === key);
-            if (found) {
+            if (found && (overwrite || !this.config![key])) {
                 if (key === 'TTS') {
                     this.config![key] = found.CfgValue === 'true';
                 } else {
@@ -52,16 +52,16 @@ export class Config {
     }
     
 
-    async reload() {
+    async load(reload = false) {
         const prisma = new PrismaClient()
         const config = await prisma.config.findMany()
-        this.updateConfigFromRawData(config)
+        this.updateConfigFromRawData(config, reload)
     }
 
     static async loadConfig() {
         if (!_config) {
             _config = new Config()
-            await _config.reload()
+            await _config.load()
         }
         return _config
     }
