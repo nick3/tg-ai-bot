@@ -13,6 +13,8 @@ RUN yarn install --frozen-lockfile --ignore-scripts
 # 将整个项目复制到工作目录
 COPY . .
 
+RUN npx prisma generate
+
 # 编译
 RUN yarn build
 
