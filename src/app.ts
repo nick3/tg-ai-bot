@@ -65,7 +65,7 @@ class App {
             const ttsfile = await this.tts?.run(replyContent)
 
             if (ttsfile) {
-                // 设置文件路径，替换为您的.wav文件路径
+                // 设置文件路径，替换为您的.wav 文件路径
                 // const filePath = path.join(__dirname, ttsfile);
                 const fileOptions = {
                     source: fs.createReadStream(ttsfile)
@@ -110,7 +110,7 @@ class App {
     
         this.bot.command('models', async (ctx) => {
             logger.debug(ctx.payload)
-            // 在telegram中显示一个inline键盘，候选项为枚举类型 Models 中的所有模型
+            // 在 telegram 中显示一个 inline 键盘，候选项为枚举类型 Models 中的所有模型
             await ctx.reply(`当前使用的模型为 ${await this.chatBotManager!.getCurrentChatBotModel(ctx.chat!.id)}，请选择需要切换的大语言模型:`, {
                 ...Markup.inlineKeyboard([
                     Markup.button.callback(Models.GPT35Turbo, Models.GPT35Turbo),
@@ -124,7 +124,7 @@ class App {
         for (const model of Object.values(Models)) {
             this.bot.action(model, async (ctx) => {
                 // 处理用户点击按钮的事件
-                // 在这里使用model进行逻辑处理
+                // 在这里使用 model 进行逻辑处理
                 await this.chatBotManager!.changeChatBotModel(ctx.chat!.id, model);
                 ctx.answerCbQuery();  // 记得调用这个方法来通知 Telegram 你已经处理了这个回调
     
@@ -171,7 +171,7 @@ class App {
             const ttsfile = await this.tts?.run(ctx.payload)
 
             if (ttsfile) {
-                // 设置文件路径，替换为您的.wav文件路径
+                // 设置文件路径，替换为您的.wav 文件路径
                 // const filePath = path.join(__dirname, ttsfile);
                 const fileOptions = {
                     source: fs.createReadStream(ttsfile)
