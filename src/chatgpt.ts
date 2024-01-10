@@ -26,98 +26,98 @@ const PROMPT = new PromptTemplate({
 });
 
 class ChatGPT {
-    chatId: number
-    bufferMemory: BufferMemory
-    summaryMemory: ConversationSummaryMemory
-    memory: CombinedMemory
-    model: ChatOpenAI
-    chain: ConversationChain
+  chatId: number
+  bufferMemory: BufferMemory
+  summaryMemory: ConversationSummaryMemory
+  memory: CombinedMemory
+  model: ChatOpenAI
+  chain: ConversationChain
 
-    constructor(chatId: number) {
-        this.chatId = chatId
+  constructor(chatId: number) {
+    this.chatId = chatId
 
-        // buffer memory
-        this.bufferMemory = new BufferMemory({
-            memoryKey: "chat_history_lines",
-            inputKey: "input",
-        });
-  
-        // summary memory
-        this.summaryMemory = new ConversationSummaryMemory({
-            llm: new ChatOpenAI({
-            modelName: "gpt-3.5-turbo",
-            temperature: 0,
-            openAIApiKey: process.env.OPENAI_API_KEY,
-            configuration: {
-                baseURL: process.env.OPENAI_API_URL
-            }
-        }),
-            inputKey: "input",
-            memoryKey: "conversation_summary",
-        });
-  
-        this.memory = new CombinedMemory({
-            memories: [this.bufferMemory, this.summaryMemory],
-        });
+    // buffer memory
+    this.bufferMemory = new BufferMemory({
+      memoryKey: "chat_history_lines",
+      inputKey: "input",
+    });
 
-        this.model = new ChatOpenAI({
-            temperature: 0.9,
-            verbose: false,
-            streaming: true,
-            openAIApiKey: process.env.OPENAI_API_KEY,
-            configuration: {
-                baseURL: process.env.OPENAI_API_URL
-            }
-        });
-        this.chain = new ConversationChain({ llm: this.model, memory: this.memory, prompt: PROMPT });
-    }
+    // summary memory
+    this.summaryMemory = new ConversationSummaryMemory({
+      llm: new ChatOpenAI({
+        modelName: "gpt-3.5-turbo",
+        temperature: 0,
+        openAIApiKey: process.env.OPENAI_API_KEY,
+        configuration: {
+          baseURL: process.env.OPENAI_API_URL
+        }
+      }),
+      inputKey: "input",
+      memoryKey: "conversation_summary",
+    });
 
-    sendMessage(message: string, handleLLMNewToken?: (token: string) => void) {
-        return this.chain.call({
-            input: message,
-            callbacks: [
-              {
-                handleLLMNewToken
-              },
-            ],
-          });
-    }
+    this.memory = new CombinedMemory({
+      memories: [this.bufferMemory, this.summaryMemory],
+    });
+
+    this.model = new ChatOpenAI({
+      temperature: 0.9,
+      verbose: false,
+      streaming: true,
+      openAIApiKey: process.env.OPENAI_API_KEY,
+      configuration: {
+        baseURL: process.env.OPENAI_API_URL
+      }
+    });
+    this.chain = new ConversationChain({ llm: this.model, memory: this.memory, prompt: PROMPT });
+  }
+
+  sendMessage(message: string, handleLLMNewToken?: (token: string) => void) {
+    return this.chain.call({
+      input: message,
+      callbacks: [
+        {
+          handleLLMNewToken
+        },
+      ],
+    });
+  }
 }
 
 type Conversations = {
-    [key: number]: ChatGPT;
-};  
+  [key: number]: ChatGPT;
+};
 
 let conversations: Conversations = {}
 const getConversation = (chatId: number) => {
-    if (!conversations[chatId]) {
-        conversations[chatId] = new ChatGPT(chatId)
-    }
-    return conversations[chatId]
+  if (!conversations[chatId]) {
+    conversations[chatId] = new ChatGPT(chatId)
+  }
+  return conversations[chatId]
 }
 
 export const throtEditMessage = _.throttle(
-    async (telegram: Telegram, chatId: number, messageId: number, text: string) => {
-        console.log(chatId, messageId, text)
-        await telegram.sendChatAction(chatId, 'typing')
-        if (text && text.length > 0) {
-            // text = telegramifyMarkdown(text, 'escape')
-            await telegram.editMessageText(chatId, messageId, undefined, text)
-        }
-    },
-    2500, 
-    {leading: true, trailing: false}
+  async (telegram: Telegram, chatId: number, messageId: number, text: string) => {
+    console.log(chatId, messageId, text)
+    await telegram.sendChatAction(chatId, 'typing')
+    if (text && text.length > 0) {
+      // text = telegramifyMarkdown(text, 'escape')
+      await telegram.editMessageText(chatId, messageId, undefined, text)
+    }
+  },
+  2500,
+  { leading: true, trailing: false }
 );
 
 export const sendMessagetoChatGPT = async (message: string, chatId: number, ctx: NarrowedContext<Context<Update>, Update.MessageUpdate<Message>>, messageId: number) => {
-    const chatGPT = getConversation(chatId)
-    let aiResponse = ''
-    const response = await chatGPT.sendMessage(message, token => {
-        aiResponse += token;
-        throtEditMessage(ctx.telegram, ctx.chat.id, messageId, aiResponse)
-    })
+  const chatGPT = getConversation(chatId)
+  let aiResponse = ''
+  const response = await chatGPT.sendMessage(message, token => {
+    aiResponse += token;
+    throtEditMessage(ctx.telegram, ctx.chat.id, messageId, aiResponse)
+  })
 
-    let text = response.response as string
-    // text = telegramifyMarkdown(text, 'escape')
-    return text
+  let text = response.response as string
+  // text = telegramifyMarkdown(text, 'escape')
+  return text
 }
