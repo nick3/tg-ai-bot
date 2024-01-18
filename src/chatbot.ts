@@ -86,12 +86,20 @@ class ChatBot {
         break;
 
       case Models.GPT4:
+        // this.llm = new ChatOpenAI({
+        //   temperature: 0.9,
+        //   azureOpenAIApiKey: this.config?.AZURE_OPENAI_API_KEY,
+        //   azureOpenAIApiVersion: this.config?.AZURE_OPENAI_API_VERSION,
+        //   azureOpenAIApiInstanceName: this.config?.AZURE_OPENAI_API_INSTANCE_NAME,
+        //   azureOpenAIApiDeploymentName: this.config?.AZURE_OPENAI_API_DEPLOYMENT_NAME,
+        // });
         this.llm = new ChatOpenAI({
+          modelName: "gpt-4",
           temperature: 0.9,
-          azureOpenAIApiKey: this.config?.AZURE_OPENAI_API_KEY,
-          azureOpenAIApiVersion: this.config?.AZURE_OPENAI_API_VERSION,
-          azureOpenAIApiInstanceName: this.config?.AZURE_OPENAI_API_INSTANCE_NAME,
-          azureOpenAIApiDeploymentName: this.config?.AZURE_OPENAI_API_DEPLOYMENT_NAME,
+          openAIApiKey: this.config?.OPENAI_API_KEY,
+          configuration: {
+            baseURL: this.config?.OPENAI_API_URL
+          }
         });
 
         break;
