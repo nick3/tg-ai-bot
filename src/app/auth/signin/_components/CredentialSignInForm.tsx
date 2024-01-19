@@ -15,9 +15,11 @@ export default function CredentialSignInForm(props: { csrfToken: string }) {
     void signIn("credentials", {
       email,
       password,
-      redirect: false,
-    }).then((res) => {
-      console.log(res);
+    }).then(async (res) => {
+      if (res?.error) {
+        setError(res.error);
+      } else {
+      }
     });
 
     // const res = await fetch("/api/auth/signin", {

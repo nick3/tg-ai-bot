@@ -6,10 +6,11 @@ import {
 } from "next-auth";
 import CredentialsProvider from "next-auth/providers/credentials";
 import GitHubProvider from "next-auth/providers/github";
-import bcrypt from 'bcrypt';
 
 import { env } from "~/env";
 import { db } from "~/server/db";
+
+import { encryptPassword } from "~/utils/password"; // 导入加密函数
 
 /**
  * Module augmentation for `next-auth` types. Allows us to add custom properties to the `session`
@@ -32,29 +33,6 @@ declare module "next-auth" {
   // }
 }
 
-// 加密密码并存储
-async function hashAndStorePassword(password: string): Promise<string> {
-  // 生成盐值
-  const saltRounds = 10;
-  const salt = await bcrypt.genSalt(saltRounds);
-
-  // 使用盐值对密码进行哈希
-  const hashedPassword = await bcrypt.hash(password, salt);
-
-  // 将哈希后的密码存储到数据库中
-  // 这里假设有一个名为 User 的模型，用于存储用户信息
-  // User.create({ password: hashedPassword });
-
-  return hashedPassword;
-}
-
-// 验证密码
-async function verifyPassword(plainPassword: string, hashedPassword: string): Promise<boolean> {
-  // 使用 bcrypt.compare 方法验证密码
-  const isMatch = await bcrypt.compare(plainPassword, hashedPassword);
-  return isMatch;
-}
-
 /**
  * Options for NextAuth.js used to configure adapters, providers, callbacks, etc.
  *
@@ -69,6 +47,14 @@ export const authOptions: NextAuthOptions = {
     // newUser: "/auth/new-user", // New users will be directed here on first sign in (leave the property out if not of interest)
   },
   callbacks: {
+    async signIn({ user, account, profile, email, credentials }) {
+      // You can customize the signIn behavior here
+      console.log('signIn', user, account, profile, email, credentials)
+      // 登录成功后路由跳转至 /dashboard
+      return '/dashboard';
+
+      // return true
+    },
     session: ({ session, user }) => ({
       ...session,
       user: {
@@ -107,7 +93,8 @@ export const authOptions: NextAuthOptions = {
           if (credentials.password === null || user.passwordHash === null) {
             throw new Error("Password or password hash is null.");
           }
-          const isMatch = await verifyPassword(credentials.password, user.passwordHash as string);
+          ;
+          const isMatch = encryptPassword(credentials.password) === user.passwordHash as string;
           if (!isMatch) {
             throw new Error("Password is not correct.");
           } else {
