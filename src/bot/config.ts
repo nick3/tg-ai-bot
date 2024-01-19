@@ -1,5 +1,6 @@
 import 'dotenv/config'
 import { PrismaClient } from '@prisma/client'
+
 import type { Config as TConfig } from '@prisma/client'
 
 export type AppConfig = {

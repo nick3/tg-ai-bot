@@ -8,7 +8,7 @@ WORKDIR /app
 COPY package.json yarn.lock ./
 
 # 安装项目依赖
-RUN yarn install --frozen-lockfile --ignore-scripts
+RUN yarn install --frozen-lockfile
 
 # 全局安装 pm2
 RUN yarn global add pm2
@@ -16,10 +16,10 @@ RUN yarn global add pm2
 # 将整个项目复制到工作目录
 COPY . .
 
-RUN npx prisma generate
+# RUN npx prisma generate
 
 # 编译
 RUN yarn build
 
 # 使用 pm2 运行应用程序
-CMD [ "pm2-runtime", "start", "dist/app.js" ]
+CMD ["pm2-runtime", "start", "yarn", "--", "start"]

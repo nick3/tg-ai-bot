@@ -3,9 +3,9 @@ generator client {
 }
 
 datasource db {
-  provider          = "sqlserver"
+  provider          = "postgresql"
   url               = env("DATABASE_URL")
-  shadowDatabaseUrl = env("SHADOW_DATABASE_URL")
+  directUrl         = env("DIRECT_URL")
 }
 
 // Necessary for Next auth
@@ -39,6 +39,7 @@ model User {
     id            String    @id @default(cuid())
     name          String?
     email         String?   @unique
+    passwordHash  String?
     emailVerified DateTime?
     image         String?
     accounts      Account[]
@@ -54,15 +55,15 @@ model VerificationToken {
 }
 
 model Config {
-  Id          Int     @id(map: "PK__Config__3214EC07BF1ADB93") @default(autoincrement())
+  Id          Int     @id @default(autoincrement())
   CfgKey      String  @db.VarChar(255)
   CfgValue    String  @db.VarChar(255)
   Description String? @db.VarChar(500)
 }
 
 model TelegramWhitelist {
-  Id        Int      @id(map: "PK__Telegram__3214EC07E40C6C08") @default(autoincrement())
+  Id        Int      @id @default(autoincrement())
   ChatId    String   @db.VarChar(255)
-  AddedDate DateTime @default(now(), map: "DF__TelegramW__Added__628FA481") @db.DateTime
+  AddedDate DateTime @default(now()) @db.Timestamptz
   Remarks   String?  @db.VarChar(500)
 }
