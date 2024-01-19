@@ -5,7 +5,7 @@ import {
   type NextAuthOptions,
 } from "next-auth";
 import CredentialsProvider from "next-auth/providers/credentials";
-import GitHubProvider from "next-auth/providers/github";
+// import GitHubProvider from "next-auth/providers/github";
 
 import { env } from "~/env";
 import { db } from "~/server/db";
@@ -39,6 +39,9 @@ declare module "next-auth" {
  * @see https://next-auth.js.org/configuration/options
  */
 export const authOptions: NextAuthOptions = {
+  session: {
+    strategy: "jwt",
+  },
   pages: {
     signIn: "/auth/signin",
     // signOut: "/auth/signout",
@@ -47,21 +50,22 @@ export const authOptions: NextAuthOptions = {
     // newUser: "/auth/new-user", // New users will be directed here on first sign in (leave the property out if not of interest)
   },
   callbacks: {
-    async signIn({ user, account, profile, email, credentials }) {
-      // You can customize the signIn behavior here
-      console.log('signIn', user, account, profile, email, credentials)
-      // 登录成功后路由跳转至 /dashboard
-      return '/dashboard';
-
-      // return true
+    // async signIn({ user, account, profile, email, credentials }) {
+    //   // You can customize the signIn behavior here
+    //   // console.log('signIn', user, account, profile, email, credentials)
+    //   // 登录成功后路由跳转至 /dashboard
+    //   return '/';
+    // },
+    session({ session, token }) {
+      console.log('session', session, token)
+      return {
+        ...session,
+        user: {
+          ...session.user,
+          id: token.sub ?? session.user?.id,
+        },
+      }
     },
-    session: ({ session, user }) => ({
-      ...session,
-      user: {
-        ...session.user,
-        id: user.id,
-      },
-    }),
   },
   adapter: PrismaAdapter(db),
   providers: [
@@ -79,7 +83,6 @@ export const authOptions: NextAuthOptions = {
       async authorize(credentials, req) {
         // Add logic here to look up the user from the credentials supplied
         let user = null
-        console.log('credentials', credentials)
         if (credentials?.email) {
           user = await getUserFromDb(credentials.email)
         } else {
@@ -103,10 +106,10 @@ export const authOptions: NextAuthOptions = {
         }
       }
     }),
-    GitHubProvider({
-      clientId: process.env.GITHUB_ID,
-      clientSecret: process.env.GITHUB_SECRET
-    })
+    // GitHubProvider({
+    //   clientId: env.GITHUB_ID,
+    //   clientSecret: env.GITHUB_SECRET
+    // })
     /**
      * ...add more providers here.
      *

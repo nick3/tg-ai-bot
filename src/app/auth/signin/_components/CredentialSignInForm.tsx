@@ -15,6 +15,7 @@ export default function CredentialSignInForm(props: { csrfToken: string }) {
     void signIn("credentials", {
       email,
       password,
+      callbackUrl: "/",
     }).then(async (res) => {
       if (res?.error) {
         setError(res.error);
