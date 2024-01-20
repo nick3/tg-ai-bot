@@ -1,37 +1,35 @@
 import { unstable_noStore as noStore } from "next/cache";
-import Link from "next/link";
 
 // import { CreatePost } from "~/app/_components/create-post";
 import { getServerAuthSession } from "~/server/auth";
+import { Header } from "~/components/main-nav";
 // import { api } from "~/trpc/server";
 
 export default async function Home() {
   noStore();
   // const hello = await api.post.hello.query({ text: "from tRPC" });
   const session = await getServerAuthSession();
-  console.log('Page session:', session);
 
   return (
     <main className="flex min-h-screen flex-col">
-      <div className="container flex flex-col items-center justify-center gap-12 px-4 py-16 ">
-        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 md:gap-8">
+      <Header />
+      {/* 未登录时显示介绍页面，登录后显示配置页面 */}
+      {session?.user ? (
+        <div className="flex flex-col items-center justify-center flex-1">
+          <h1 className="text-4xl font-bold">Teleram AI Bot Configurator</h1>
+          <p className="mt-4">Teleram AI 机器人配置器</p>
+          <p className="mt-4">您已登录</p>
         </div>
-        <div className="flex flex-col items-center gap-2">
-          <div className="flex flex-col items-center justify-center gap-4">
-            <p className="text-center text-2xl text-white">
-              {session && <span>Logged in as {session.user?.name}</span>}
-            </p>
-            <Link
-              href={session ? "/api/auth/signout" : "/api/auth/signin"}
-              className="rounded-full bg-blue/10 px-10 py-3 font-semibold no-underline transition hover:bg-blue/20"
-            >
-              {session ? "Sign out" : "Sign in"}
-            </Link>
-          </div>
+      ) : (
+        <div className="flex flex-col items-center justify-center flex-1">
+          <h1 className="text-4xl font-bold">Teleram AI Bot Configurator</h1>
+          <p className="mt-4">Teleram AI 机器人配置器</p>
+          <p className="mt-4">请登录后使用</p>
         </div>
+      )}
 
-        {/* <CrudShowcase /> */}
-      </div>
+
+      {/* <CrudShowcase /> */}
     </main>
   );
 }

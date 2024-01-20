@@ -43,4 +43,3 @@ yarn-error.log*
 /stderr.txt
 /stdout.txt
 /dist
-/.vscode

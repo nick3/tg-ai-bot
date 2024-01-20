@@ -1,72 +1,95 @@
 "use client"
 
 import { signIn } from "next-auth/react";
-import { useState } from "react";
+import { zodResolver } from "@hookform/resolvers/zod"
+import { useForm } from "react-hook-form"
+import * as z from "zod"
+import { Button } from "~/components/ui/button"
+import {
+  Form,
+  FormControl,
+  FormDescription,
+  FormField,
+  FormItem,
+  FormLabel,
+  FormMessage,
+} from "~/components/ui/form"
+import { Input } from "~/components/ui/input"
+
+const formSchema = z.object({
+  email: z.string().min(4).max(100),
+  password: z.string().min(4).max(100),
+})
 
 export default function CredentialSignInForm(props: { csrfToken: string }) {
-  const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
-  const [error, setError] = useState<string | null>(null);
 
-  const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
-    e.preventDefault();
-    setError(null);
+  // 1. Define your form.
+  const form = useForm<z.infer<typeof formSchema>>({
+    resolver: zodResolver(formSchema),
+    defaultValues: {
+      email: "",
+      password: "",
+    },
+  })
 
+  // 2. Define a submit handler.
+  function onSubmit(values: z.infer<typeof formSchema>) {
+    // Do something with the form values.
+    // ✅ This will be type-safe and validated.
+    const { email, password } = values;
     void signIn("credentials", {
       email,
       password,
       callbackUrl: "/",
     }).then(async (res) => {
       if (res?.error) {
-        setError(res.error);
+        form.setError("email", {
+          type: "manual",
+          message: res.error,
+        });
       } else {
       }
-    });
-
-    // const res = await fetch("/api/auth/signin", {
-    //   method: "POST",
-    //   headers: { "Content-Type": "application/json" },
-    //   body: JSON.stringify({
-    //     email,
-    //     password: encryptPassword(password),
-    //   }),
-    // });
-
-    // if (res.status !== 200) {
-    //   setError("Incorrect email or password");
-    // }
-  };
+    })
+  }
 
   return (
-    <form className="flex flex-col items-center justify-center h-screen" onSubmit={handleSubmit}>
-      <input name="csrfToken" type="hidden" defaultValue={props.csrfToken} />
-      <label className="mb-2">
-        Email
-        <input
-          className="border border-gray-300 rounded-md p-2"
+    <Form {...form}>
+      <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-8">
+        <input name="csrfToken" type="hidden" defaultValue={props.csrfToken} />
+        <FormField
+          control={form.control}
           name="email"
-          type="text"
-          value={email}
-          onChange={(e) => setEmail(e.target.value)}
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>Username or Email</FormLabel>
+              <FormControl>
+                <Input placeholder="用户名或邮箱地址" {...field} />
+              </FormControl>
+              <FormDescription>
+                您注册账号的邮箱地址
+              </FormDescription>
+              <FormMessage />
+            </FormItem>
+          )}
         />
-      </label>
-      <label className="mb-2">
-        Password
-        <input
-          className="border border-gray-300 rounded-md p-2"
+        <FormField
+          control={form.control}
           name="password"
-          type="password"
-          value={password}
-          onChange={(e) => setPassword(e.target.value)}
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>Password</FormLabel>
+              <FormControl>
+                <Input placeholder="密码" {...field} />
+              </FormControl>
+              <FormDescription>
+                您的账号登录密码
+              </FormDescription>
+              <FormMessage />
+            </FormItem>
+          )}
         />
-      </label>
-      <button
-        className="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded"
-        type="submit"
-      >
-        Sign in
-      </button>
-      {error && <p className="text-red-500">{error}</p>}
-    </form>
+        <Button type="submit">登录</Button>
+      </form>
+    </Form>
   );
 }

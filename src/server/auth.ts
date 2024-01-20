@@ -9,7 +9,7 @@ import CredentialsProvider from "next-auth/providers/credentials";
 
 import { env } from "~/env";
 import { db } from "~/server/db";
-
+import { randomUUID, randomBytes } from 'crypto';
 import { encryptPassword } from "~/utils/password"; // 导入加密函数
 
 /**
@@ -39,6 +39,9 @@ declare module "next-auth" {
  * @see https://next-auth.js.org/configuration/options
  */
 export const authOptions: NextAuthOptions = {
+  session: {
+    strategy: "jwt",
+  },
   pages: {
     signIn: "/auth/signin",
     // signOut: "/auth/signout",
@@ -53,13 +56,12 @@ export const authOptions: NextAuthOptions = {
     //   // 登录成功后路由跳转至 /dashboard
     //   return '/';
     // },
-    session({ session, user }) {
-      console.log('session', session, user)
+    session({ session, token }) {
       return {
         ...session,
         user: {
           ...session.user,
-          id: user.id,
+          id: token.sub ?? session.user.id,
         },
       }
     },
@@ -85,7 +87,6 @@ export const authOptions: NextAuthOptions = {
         } else {
           throw new Error("Email is not correct.")
         }
-        console.log('user', user)
 
         if (!user) {
           throw new Error("User was not found and could not be created.")
