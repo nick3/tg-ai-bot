@@ -39,9 +39,6 @@ declare module "next-auth" {
  * @see https://next-auth.js.org/configuration/options
  */
 export const authOptions: NextAuthOptions = {
-  session: {
-    strategy: "jwt",
-  },
   pages: {
     signIn: "/auth/signin",
     // signOut: "/auth/signout",
@@ -56,13 +53,13 @@ export const authOptions: NextAuthOptions = {
     //   // 登录成功后路由跳转至 /dashboard
     //   return '/';
     // },
-    session({ session, token }) {
-      console.log('session', session, token)
+    session({ session, user }) {
+      console.log('session', session, user)
       return {
         ...session,
         user: {
           ...session.user,
-          id: token.sub ?? session.user?.id,
+          id: user.id,
         },
       }
     },
@@ -97,7 +94,7 @@ export const authOptions: NextAuthOptions = {
             throw new Error("Password or password hash is null.");
           }
           ;
-          const isMatch = encryptPassword(credentials.password) === user.passwordHash as string;
+          const isMatch = encryptPassword(credentials.password) === user.passwordHash;
           if (!isMatch) {
             throw new Error("Password is not correct.");
           } else {
